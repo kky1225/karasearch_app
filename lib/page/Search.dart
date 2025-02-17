@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:karasearch/layout/MediaButton.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../model/Notice.dart';
 import '../model/Song.dart';
 
 class Search extends StatefulWidget {
@@ -16,19 +18,19 @@ class _SearchState extends State<Search> {
   String category = 'title';
   String keyword = '';
   late Future<List<Song>> _future;
+  List<Notice> noticeList = [];
 
   @override
   void initState() {
     super.initState();
     _future = Future.value([]);
+    getNoticeList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        //Row(
-          //children: [
             MediaButton(
                 media: media,
                 onChange: (value) {
@@ -38,8 +40,6 @@ class _SearchState extends State<Search> {
                   });
                 }
             ),
-          //],
-        //),
         Row(
           children: [
             SizedBox(
@@ -60,11 +60,11 @@ class _SearchState extends State<Search> {
                       });
                     },
                     decoration: InputDecoration(
-                      border: OutlineInputBorder( // 기본 테두리
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: Colors.blueAccent),
                       ),
-                      focusedBorder: OutlineInputBorder( // 포커스 상태 테두리
+                      focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: Colors.blueAccent, width: 2),
                       ),
@@ -150,6 +150,69 @@ class _SearchState extends State<Search> {
     );
   }
 
+  Future<void> noticePopup(int index) async {
+    if(index >= noticeList.length) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    final key = 'never_show_notice_${noticeList[index].id}';
+
+    bool isNeverShow = prefs.getBool(key) ?? false;
+
+    if(isNeverShow) {
+      noticePopup(index + 1);
+      return;
+    }
+
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(noticeList[index].title),
+            content: Text(noticeList[index].content),
+            actions: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: CheckboxListTile(
+                      title: Text(
+                        "다시는 보지 않기",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      value: isNeverShow,
+                      onChanged: (bool? value) async {
+                        if (value != null) {
+                          await prefs.setBool(key, value);
+                          Navigator.of(context).pop();
+                          noticePopup(index + 1);
+                        }
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                    )
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      noticePopup(index + 1);
+                    },
+                    child: Text("닫기"),
+                  )
+                ],
+              )
+            ],
+          );
+        }
+    );
+  }
+
   Future<List<Song>> getSearchSongList(String media, String category, String keyword) async {
     try {
       final url = Uri.parse('http://13.124.181.85:8080/v1/api/song/search').replace(
@@ -172,6 +235,30 @@ class _SearchState extends State<Search> {
       return jsonList.map((json) => Song.fromJson(json)).toList();
     }catch(e) {
       throw Exception('노래 검색 실패');
+    }
+  }
+
+  Future<void> getNoticeList() async {
+    try {
+      final url = Uri.parse('http://13.124.181.85:8080/v1/api/notice/list');
+
+      final res = await http.get(url);
+
+      if(res.statusCode != 200 ) {
+        throw Exception('공지사항 조회 실패');
+      }
+
+      final data = json.decode(utf8.decode(res.bodyBytes));
+
+      setState(() {
+        noticeList = List<Notice>.from(data.map((value) => Notice.fromJson(value)).toList());
+      });
+
+      if(noticeList.isNotEmpty) {
+        noticePopup(0);
+      }
+    }catch (e) {
+      throw Exception('공지사항 조회 실패');
     }
   }
 }
