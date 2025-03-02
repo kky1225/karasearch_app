@@ -4,7 +4,7 @@ import 'package:karasearch/layout/Bottom.dart';
 import 'package:karasearch/page/AppVersion.dart';
 import 'package:karasearch/page/Bookmark.dart';
 import 'package:karasearch/page/New.dart';
-import 'package:karasearch/page/Notice.dart';
+import 'package:karasearch/page/NoticeList.dart';
 import 'package:karasearch/page/Popular.dart';
 import 'package:karasearch/page/Search.dart';
 
@@ -69,7 +69,7 @@ class _ScreenState extends State<Screen> {
               title: Text('공지사항'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => Notice()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => NoticeList()));
               },
             ),
             ListTile(

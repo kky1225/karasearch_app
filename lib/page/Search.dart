@@ -240,7 +240,7 @@ class _SearchState extends State<Search> {
 
   Future<void> getNoticeList() async {
     try {
-      final url = Uri.parse('http://13.124.181.85:8080/v1/api/notice/list');
+      final url = Uri.parse('http://13.124.181.85:8080/v1/api/notice/popupList');
 
       final res = await http.get(url);
 
