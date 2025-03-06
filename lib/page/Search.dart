@@ -20,11 +20,38 @@ class _SearchState extends State<Search> {
   late Future<List<Song>> _future;
   List<Notice> noticeList = [];
 
+  List<Song> bookmarkListAll = [];
+  List<Song> bookmarkListFilter = [];
+
   @override
   void initState() {
     super.initState();
     _future = Future.value([]);
     getNoticeList();
+    _getBookmarkList();
+  }
+
+  Future<void> _getBookmarkList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarkListString = prefs.getString('bookmarkList');
+
+    if (bookmarkListString != null) {
+      final List<dynamic> bookmarkListJson = jsonDecode(bookmarkListString);
+      setState(() {
+        bookmarkListAll = bookmarkListJson.map((json) => Song.fromJson(json)).toList();
+        bookmarkListFilter = bookmarkListAll.where((song) => song.media == media).toList();
+      });
+    }
+  }
+
+  Future<void> _updateBookmarkList() async {
+    bookmarkListAll = bookmarkListFilter + bookmarkListAll.where((bookmark) => bookmark.media != media).toList();
+
+    print(bookmarkListAll.length);
+
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarkListJson = bookmarkListAll.map((song) => song.toJson()).toList();
+    prefs.setString('bookmarkList', jsonEncode(bookmarkListJson));
   }
 
   @override
@@ -37,6 +64,7 @@ class _SearchState extends State<Search> {
                   setState(() {
                     media = value;
                     _future = getSearchSongList(media, category, keyword);
+                    _getBookmarkList();
                   });
                 }
             ),
@@ -82,7 +110,7 @@ class _SearchState extends State<Search> {
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: Colors.blueAccent),
                     ),
-                    focusedBorder: OutlineInputBorder( // 포커스 상태 테두리
+                    focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(color: Colors.blueAccent, width: 2),
                     ),
@@ -121,6 +149,8 @@ class _SearchState extends State<Search> {
                           itemCount: songs.length,
                           itemBuilder: (context, index) {
                             final song = songs[index];
+                            final isFavorite = bookmarkListFilter.any((bookmark) => bookmark.id == song.id);
+
                             return ListTile(
                               leading: Container(
                                 width: 50,
@@ -138,6 +168,32 @@ class _SearchState extends State<Search> {
 
                               title: Text(song.title),
                               subtitle: Text(song.singer),
+                              trailing: IconButton(
+                                icon: Icon(
+                                    isFavorite ? Icons.favorite : Icons.favorite_border
+                                ),
+                                color: Colors.red,
+                                onPressed: () {
+                                  setState(() {
+                                    if(isFavorite) {
+                                      bookmarkListFilter.removeWhere((bookmark) => bookmark.id == song.id);
+                                    }else {
+                                      bookmarkListFilter.add(
+                                          Song(
+                                              id: song.id,
+                                              no: song.no,
+                                              title: song.title,
+                                              singer: song.singer,
+                                              music: song.music,
+                                              lyrics: song.lyrics,
+                                              media: song.media
+                                          )
+                                      );
+                                    }
+                                  });
+                                  _updateBookmarkList();
+                                },
+                              ),
                             );
                           }
                       )

@@ -17,6 +17,18 @@ class Song {
     required this.media
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'no': no,
+      'title': title,
+      'singer': singer,
+      'music': music,
+      'lyrics': lyrics,
+      'media': media
+    };
+  }
+
   factory Song.fromJson(Map<String, dynamic> json) {
     return Song(
       id: json['id'],

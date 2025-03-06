@@ -13,8 +13,8 @@ class Popular extends StatefulWidget {
 
 class _PopularSongState extends State<Popular> {
   String media = 'TJ';
-  String year = '2025';
-  String month = '01';
+  String year = DateTime.now().month - 1 == 0 ? (DateTime.now().year - 1).toString() : DateTime.now().year.toString();
+  String month = DateTime.now().month - 1 == 0 ? "12" : (DateTime.now().month - 1).toString().padLeft(2, '0');
   late Future<List<PopularSong>> _future;
 
   @override
