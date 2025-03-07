@@ -47,8 +47,6 @@ class _SearchState extends State<Search> {
   Future<void> _updateBookmarkList() async {
     bookmarkListAll = bookmarkListFilter + bookmarkListAll.where((bookmark) => bookmark.media != media).toList();
 
-    print(bookmarkListAll.length);
-
     final prefs = await SharedPreferences.getInstance();
     final bookmarkListJson = bookmarkListAll.map((song) => song.toJson()).toList();
     prefs.setString('bookmarkList', jsonEncode(bookmarkListJson));
@@ -58,22 +56,22 @@ class _SearchState extends State<Search> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-            MediaButton(
-                media: media,
-                onChange: (value) {
-                  setState(() {
-                    media = value;
-                    _future = getSearchSongList(media, category, keyword);
-                    _getBookmarkList();
-                  });
-                }
-            ),
+        MediaButton(
+            media: media,
+            onChange: (value) {
+              setState(() {
+                media = value;
+                _future = getSearchSongList(media, category, keyword);
+                _getBookmarkList();
+              });
+            }
+        ),
         Row(
-          children: [
-            SizedBox(
-                width: 80,
-                child:
-                DropdownButtonFormField<String>(
+            children: [
+              SizedBox(
+                  width: 80,
+                  child:
+                  DropdownButtonFormField<String>(
                     value: category,
                     items: [{'label': '제목', 'value': 'title'}, {'label': '가수', 'value': 'singer'}].map((value) {
                       return DropdownMenuItem<String>(
@@ -98,38 +96,39 @@ class _SearchState extends State<Search> {
                       ),
                     ),
 
-                )
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.blueAccent),
+                  )
+              ),
+              Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.blueAccent),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.blueAccent, width: 2),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          keyword = value;
+                        });
+                      },
+                      onSubmitted: (value) {
+                        setState(() {
+                          _future = getSearchSongList(media, category, keyword);
+                        });
+                      },
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.blueAccent, width: 2),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      keyword = value;
-                    });
-                  },
-                  onSubmitted: (value) {
-                    setState(() {
-                      _future = getSearchSongList(media, category, keyword);
-                    });
-                  },
-                ),
+                  )
               )
-            )
-          ]
+            ]
         ),
+        SizedBox(height: 5),
         Expanded(
             child: FutureBuilder<List<Song>>(
               future: _future,
@@ -226,44 +225,52 @@ class _SearchState extends State<Search> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(noticeList[index].title),
-            content: Text(noticeList[index].content),
-            actions: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: CheckboxListTile(
-                      title: Text(
-                        "다시는 보지 않기",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
+          return StatefulBuilder(
+              builder: (context, setState) {
+                return AlertDialog(
+                  title: Text(noticeList[index].title),
+                  content: Text(noticeList[index].content),
+                  actions: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                            child: CheckboxListTile(
+                              title: Text(
+                                "다시는 보지 않기",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                              value: isNeverShow,
+                              onChanged: (bool? value) {
+                                if (value != null) {
+                                  setState(() {
+                                    isNeverShow = value;
+                                  });
+                                }
+                              },
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                              visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+                            )
                         ),
-                      ),
-                      value: isNeverShow,
-                      onChanged: (bool? value) async {
-                        if (value != null) {
-                          await prefs.setBool(key, value);
-                          Navigator.of(context).pop();
-                          noticePopup(index + 1);
-                        }
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
+                        TextButton(
+                          onPressed: () async {
+                            if(isNeverShow) {
+                              await prefs.setBool(key, isNeverShow);
+                            }
+                            Navigator.of(context).pop();
+                            noticePopup(index + 1);
+                          },
+                          child: Text("닫기"),
+                        )
+                      ],
                     )
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      noticePopup(index + 1);
-                    },
-                    child: Text("닫기"),
-                  )
-                ],
-              )
-            ],
+                  ],
+                );
+              }
           );
         }
     );

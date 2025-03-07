@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../layout/MediaButton.dart';
 import '../model/Song.dart';
 import 'package:http/http.dart' as http;
@@ -15,10 +16,35 @@ class _NewState extends State<New> {
   String media = 'TJ';
   late Future<List<Song>> _future;
 
+  List<Song> bookmarkListAll = [];
+  List<Song> bookmarkListFilter = [];
+
   @override
   void initState() {
     super.initState();
     _future = getNewSongList(media);
+    _getBookmarkList();
+  }
+
+  Future<void> _getBookmarkList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarkListString = prefs.getString('bookmarkList');
+
+    if (bookmarkListString != null) {
+      final List<dynamic> bookmarkListJson = jsonDecode(bookmarkListString);
+      setState(() {
+        bookmarkListAll = bookmarkListJson.map((json) => Song.fromJson(json)).toList();
+        bookmarkListFilter = bookmarkListAll.where((song) => song.media == media).toList();
+      });
+    }
+  }
+
+  Future<void> _updateBookmarkList() async {
+    bookmarkListAll = bookmarkListFilter + bookmarkListAll.where((bookmark) => bookmark.media != media).toList();
+
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarkListJson = bookmarkListAll.map((song) => song.toJson()).toList();
+    prefs.setString('bookmarkList', jsonEncode(bookmarkListJson));
   }
 
   @override
@@ -31,9 +57,11 @@ class _NewState extends State<New> {
                 setState(() {
                   media = value;
                   _future = getNewSongList(media);
+                  _getBookmarkList();
                 });
               }
           ),
+          SizedBox(height: 5),
           Expanded(
               child: FutureBuilder<List<Song>>(
                 future: _future,
@@ -41,7 +69,6 @@ class _NewState extends State<New> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    print(snapshot.error);
                     return Center(child: Text('오류가 발생했습니다.'));
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Center(child: Text('검색 결과가 없습니다.'));
@@ -54,6 +81,8 @@ class _NewState extends State<New> {
                             itemCount: songs.length,
                             itemBuilder: (context, index) {
                               final song = songs[index];
+                              final isFavorite = bookmarkListFilter.any((bookmark) => bookmark.id == song.id);
+
                               return ListTile(
                                 leading: Container(
                                   width: 50,
@@ -71,6 +100,32 @@ class _NewState extends State<New> {
 
                                 title: Text(song.title),
                                 subtitle: Text(song.singer),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                      isFavorite ? Icons.favorite : Icons.favorite_border
+                                  ),
+                                  color: Colors.red,
+                                  onPressed: () {
+                                    setState(() {
+                                      if(isFavorite) {
+                                        bookmarkListFilter.removeWhere((bookmark) => bookmark.id == song.id);
+                                      }else {
+                                        bookmarkListFilter.add(
+                                            Song(
+                                                id: song.id,
+                                                no: song.no,
+                                                title: song.title,
+                                                singer: song.singer,
+                                                music: song.music,
+                                                lyrics: song.lyrics,
+                                                media: song.media
+                                            )
+                                        );
+                                      }
+                                    });
+                                    _updateBookmarkList();
+                                  },
+                                ),
                               );
                             }
                         )

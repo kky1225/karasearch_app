@@ -59,6 +59,7 @@ class _BookmarkState extends State<Bookmark> {
               });
             }
         ),
+        SizedBox(height: 5),
         Expanded(
           child: bookmarkListFilter.isEmpty ? Center(child: Text('좋아요 목록이 존재하지 않습니다.')) :
             Scrollbar(

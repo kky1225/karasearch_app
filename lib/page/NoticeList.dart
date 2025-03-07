@@ -42,7 +42,7 @@ class _NoticeState extends State<NoticeList> {
 
                         return Scrollbar(
                             thumbVisibility: false,
-                            child: ListView.builder(
+                            child: ListView.separated(
                                 itemCount: noticeList.length,
                                 itemBuilder: (context, index) {
                                   final notice = noticeList[index];
@@ -54,6 +54,11 @@ class _NoticeState extends State<NoticeList> {
                                     },
                                   );
                                 },
+                                separatorBuilder: (context, index) => Divider(
+                                  color: Colors.grey[500],
+                                  thickness: 0.5,
+                                  height: 1,
+                                ),
                             )
                         );
                       }
@@ -76,16 +81,11 @@ class _NoticeState extends State<NoticeList> {
             title: Text(notice.title),
             content: Text(notice.content),
             actions: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text("닫기"),
-                  )
-                ],
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("닫기"),
               )
             ],
           );

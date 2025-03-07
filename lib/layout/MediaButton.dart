@@ -22,10 +22,17 @@ class _MediaButton extends State<MediaButton> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      height: 50,
       child: SegmentedButton<String>(
         style: SegmentedButton.styleFrom(
-            selectedForegroundColor: Colors.white,
-            selectedBackgroundColor: Colors.blueAccent,
+          selectedForegroundColor: Colors.white,
+          selectedBackgroundColor: Colors.blueAccent,
+          side: BorderSide(color: Colors.blueAccent, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
         segments: [
           ButtonSegment<String>(
